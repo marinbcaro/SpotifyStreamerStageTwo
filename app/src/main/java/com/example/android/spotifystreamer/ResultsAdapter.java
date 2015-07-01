@@ -1,18 +1,21 @@
 package com.example.android.spotifystreamer;
 
+import android.app.Activity;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.android.spotifystreamer.data.SpotifyObject;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
 
 /**
  * Created by carolinamarin on 6/17/15.
@@ -29,41 +32,48 @@ public class ResultsAdapter extends ArrayAdapter<SpotifyObject> {
         mContext = context;
     }
 
+    static class ViewHolder {
+
+        @Bind(R.id.text_view_name) TextView name;
+        @Bind(R.id.text_view_album) TextView album;
+        @Bind(R.id.imageView) ImageView image;
+
+        public ViewHolder(View view) {
+            ButterKnife.bind(this, view);
+        }
+    }
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        LinearLayout layout;
-
+        View row=convertView;
+        ViewHolder holder=null;
 
         SpotifyObject result = getItem(position);
         String url = result.getUrl();
         String name = result.getName();
         String album = result.getAlbumName();
 
-
-        if (convertView == null) {
-            layout = new LinearLayout(getContext());
-            ((LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE))
-                    .inflate(mResource, layout, true);
-        } else {
-            layout = (LinearLayout) convertView;
+        if(row==null){
+            LayoutInflater inflater=((Activity)mContext).getLayoutInflater();
+            row=inflater.inflate(mResource,parent,false);
+            holder=new ViewHolder(row);
+            row.setTag(holder);
+        }else{
+            holder=(ViewHolder)row.getTag();
         }
+
         if (album != "") {
-            ((TextView) layout.findViewById(R.id.text_view_album)).setText(album);
+            holder.album.setText(album);
         }
-
-        ((TextView) layout.findViewById(R.id.text_view_name)).setText(name);
-        ImageView imageView = (ImageView) layout.findViewById(R.id.imageView);
-        imageView.setImageBitmap(null);
-
+        holder.name.setText(name);
+        holder.image.setImageBitmap(null);
 
         if (url !="") {
-
-            Picasso.with(mContext).load(url).into(((ImageView) layout.findViewById(R.id.imageView)));
+            Picasso.with(mContext).load(url).into(holder.image);
         } else {
-            imageView.setImageResource(R.drawable.placeholder);
+            holder.image.setImageResource(R.drawable.placeholder);
         }
 
-        return layout;
+        return row;
     }
 
 }
