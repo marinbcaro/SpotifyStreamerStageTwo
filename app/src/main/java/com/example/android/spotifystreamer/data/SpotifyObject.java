@@ -17,13 +17,24 @@ public abstract class SpotifyObject implements Parcelable {
     private String id;
     private String name;
     private String url;
+
+    public String getUrlThumb() {
+        return urlThumb;
+    }
+
+    public void setUrlThumb(String urlThumb) {
+        this.urlThumb = urlThumb;
+    }
+
+    private String urlThumb;
     private String albumName;
 
-    public SpotifyObject(String id, String name, String url, String albumName) {
+    public SpotifyObject(String id, String name, String url, String albumName,String urlThum) {
         this.id = id;
         this.name = name;
         this.url = url;
         this.albumName = albumName;
+        this.urlThumb=urlThumb;
     }
 
 
@@ -51,7 +62,7 @@ public abstract class SpotifyObject implements Parcelable {
 
     public void setName(String name) {this.name = name;}
 
-    public String getImage(List<Image> images) {
+    public String getImage(List<Image> images,String type) {
         if (images != null && images.size() > 0) {
             if (images.size() == 1) {
                 return images.get(0).url;
@@ -59,9 +70,18 @@ public abstract class SpotifyObject implements Parcelable {
                 int position = 0;
                 for (int cont = 0; cont < images.size(); cont++) {
                     Image img = images.get(cont);
-                    if (img.width == 64) {
-                        position = cont;
+                    if(type=="thumb"){
+                        if (img.width == 64) {
+                            position = cont;
+                        }
                     }
+                    if(type=="regular"){
+                        if (img.width == 300) {
+                            position = cont;
+                        }
+                    }
+
+
                 }
                 return images.get(position).url;
             }
@@ -75,12 +95,14 @@ public abstract class SpotifyObject implements Parcelable {
         out.writeString(name);
         out.writeString(url);
         out.writeString(albumName);
+        out.writeString(urlThumb);
     }
     public SpotifyObject(Parcel in) {
         this.id = in.readString();
         this.name = in.readString();
         this.url = in.readString();
         this.albumName = in.readString();
+        this.urlThumb=in.readString();
 
     }
     public int describeContents() {

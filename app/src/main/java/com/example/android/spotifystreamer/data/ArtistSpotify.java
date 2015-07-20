@@ -14,8 +14,8 @@ public class ArtistSpotify extends SpotifyObject {
     private ArrayList<TrackSpotify> topTracks = new ArrayList<TrackSpotify>();
 
 
-    public ArtistSpotify(String id, String name, String url, String albumName, ArrayList<TrackSpotify> tracks) {
-        super(id, name, url, albumName);
+    public ArtistSpotify(String id, String name, String url, String albumName,String urlThumb ,ArrayList<TrackSpotify> tracks) {
+        super(id, name, url, albumName,urlThumb);
         this.topTracks = tracks;
     }
 

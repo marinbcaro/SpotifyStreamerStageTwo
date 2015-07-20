@@ -48,7 +48,7 @@ public class ResultsAdapter extends ArrayAdapter<SpotifyObject> {
         ViewHolder holder=null;
 
         SpotifyObject result = getItem(position);
-        String url = result.getUrl();
+        String url = result.getUrlThumb();
         String name = result.getName();
         String album = result.getAlbumName();
 
