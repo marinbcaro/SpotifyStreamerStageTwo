@@ -1,33 +1,29 @@
 package com.example.android.spotifystreamer;
 
-import android.app.Dialog;
-import android.app.Fragment;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.DialogFragment;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.LinearLayout.LayoutParams;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.example.android.spotifystreamer.data.TrackSpotify;
-import com.example.android.spotifystreamer.service.MediaPlayerService;
-import com.example.android.spotifystreamer.service.MediaPlayerService.MusicBinder;
+import com.example.android.spotifystreamer.service.PlayerService;
+import com.example.android.spotifystreamer.data.Utility;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -35,310 +31,326 @@ import java.util.ArrayList;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link MediaPlayerFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link MediaPlayerFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+
 public class MediaPlayerFragment extends DialogFragment {
 
-
-    private EditText mEditText;
-    private MediaPlayerService musicSrv;
-    private Intent playIntent;
-    private boolean musicBound=false;
-    private ArrayList<TrackSpotify> mTracks=new ArrayList<>();
-    private int position;
+    private static MediaPlayer mediaPlayer;
+    PlayerService mService;
+    boolean mBound = false;
+    boolean played = false;
     boolean mIsLargeLayout;
+    @Bind(R.id.artistName)
+    TextView artistName;
+    @Bind(R.id.albumName)
+    TextView album;
+    @Bind(R.id.trackName)
+    TextView trackName;
+    @Bind(R.id.progressUpdate)
+    TextView trackProgress;
+    @Bind(R.id.totalDuration)
+    TextView trackDuration;
+    @Bind(R.id.trackBar)
+    SeekBar trackbar;
+    @Bind(R.id.trackImage)
+    ImageView trackImage;
+    @Bind(R.id.edit_name)
+    LinearLayout edit;
+    @Bind(R.id.play)
+    ImageButton btPlay;
+    @Bind(R.id.next)
+    ImageButton btNext;
+    @Bind(R.id.previous)
+    ImageButton btBack;
+    @Bind(R.id.pause)
+    ImageButton btPause;
+    private ArrayList<TrackSpotify> mTracks = new ArrayList<>();
+    private int position = -1;
+    private int positionArg;
+    private Handler mHandler = new Handler();
+    private ServiceConnection mConnection = new ServiceConnection() {
 
-    @Bind(R.id.artistName) TextView artistName;
-    @Bind(R.id.albumName) TextView album;
-    @Bind(R.id.trackName) TextView trackName;
-    @Bind(R.id.trackImage) ImageView trackImage;
-    @Bind(R.id.edit_name) LinearLayout edit;
-
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        if(playIntent==null){
-            playIntent = new Intent(getActivity(), MediaPlayerService.class);
-            getActivity().startService(playIntent);
-            getActivity().bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
-
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            PlayerService.LocalBinder binder = (PlayerService.LocalBinder) service;
+            mService = binder.getService();
+            mService.setList(mTracks);
+            mBound = true;
         }
-    }
 
-//    @Override
-//    public void onStop() {
-//        super.onStop();
-//        getActivity().unbindService(musicConnection);
-//
-//    }
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mBound = false;
+        }
+    };
 
-
-    public void stopSong(){
-       // if(playIntent!=null) {
-
-        //    getActivity().stopService(playIntent);
-      //  getActivity().unbindService(musicConnection);
-          //  getActivity().stopService(playIntent);
-       //     musicSrv = null;
-           // System.exit(0);
-        //}
-    }
-
-    public void songPicked(View view){
-        musicSrv.setSong(Integer.parseInt(view.getTag().toString()));
-       // musicSrv.playSong();
-    }
-public void startPlayer(View view){
-//    Toast.makeText(getActivity().getApplicationContext(), "No tracks available for this artist",
-//            Toast.LENGTH_SHORT).show();
-}
-
-    public MediaPlayerFragment() {
-        // Empty constructor required for DialogFragment
-    }
-
-    public static MediaPlayerFragment newInstance(ArrayList<TrackSpotify> tracks,int pos,String artistName) {
+    public static MediaPlayerFragment newInstance(ArrayList<TrackSpotify> tracks, int pos, String artistName) {
         MediaPlayerFragment frag = new MediaPlayerFragment();
         Bundle args = new Bundle();
-
-        //String name=artist.getPreviewUrl();
-
         args.putParcelableArrayList("tracksplayer", tracks);
         args.putInt("position", pos);
         args.putString("artistName", artistName);
         frag.setArguments(args);
-
         return frag;
     }
 
-
-//    public void showEditDialog2() {
-//        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
-//        MyDialogFragment newFragment = new MyDialogFragment();
-//
-//        if (mIsLargeLayout) {
-//            // The device is using a large layout, so show the fragment as a dialog
-//            newFragment.show(fragmentManager, "dialog");
-//        } else {
-//            // The device is smaller, so show the fragment fullscreen
-//            FragmentTransaction transaction = fragmentManager.beginTransaction();
-//            // For a little polish, specify a transition animation
-//            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
-//            // To make it fullscreen, use the 'content' root view as the container
-//            // for the fragment, which is always the root view for the activity
-//            transaction.add(android.R.id.content, newFragment)
-//                    .addToBackStack(null).commit();
-//        }
-//    }
-
+    /**
+     * The system calls this to get the DialogFragment's layout, regardless
+     * of whether it's being displayed as a dialog or an embedded fragment.
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
+
         View view = inflater.inflate(R.layout.fragment_media_player, container, false);
-
         ButterKnife.bind(this, view);
-
         mIsLargeLayout = getResources().getBoolean(R.bool.large_layout);
 
-        if(mIsLargeLayout) {
-            edit.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+        if (getDialog() != null) {
+            getDialog().getWindow().requestFeature(Window.FEATURE_NO_TITLE);
         }
 
+        mTracks = getArguments().getParcelableArrayList("tracksplayer");
+        positionArg = getArguments().getInt("position");
+        if (position == -1) {
+            position = positionArg;
+        }
 
-        Log.v("logTag", "getDialog(): " + getDialog());
+        playSong(position, mTracks);
+        updateTrack(position);
 
-       // if(mIsLargeLayout) {
-            //mEditText = (EditText) view.findViewById(R.id.txt_your_name);
-            String name = getArguments().getString("artistName");
-//        getDialog().setTitle(title);
-            mTracks = getArguments().getParcelableArrayList("tracksplayer");
-            position = getArguments().getInt("position");
-            TrackSpotify track=mTracks.get(position);
-            String url= track.getUrl();
-            ImageView img=(ImageView) view.findViewById(R.id.trackImage);
-            Picasso.with(getActivity().getApplicationContext()).load(url).into(img);
-            album.setText(track.getAlbumName());
-            trackName.setText(track.getName());
-            artistName.setText(name);
 
-            // Show soft keyboard automatically
-          //  mEditText.requestFocus();
-       // }
-
-        ImageButton btPlay=(ImageButton)view.findViewById(R.id.play);
         btPlay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //   musicSrv.setSong(Integer.parseInt(view.getTag().toString()));
-                musicSrv.playSong(position);
-String test="";
+                if (mBound) {
+                    playPause();
+                    btPlay.setVisibility(View.GONE);
+                    btPause.setVisibility(View.VISIBLE);
+                }
             }
         });
-        ImageButton btStop=(ImageButton)view.findViewById(R.id.pause);
-        btStop.setOnClickListener(new View.OnClickListener() {
+
+        btNext.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View arg0) {
+                if (mediaPlayer != null) {
+                    played = false;
+                    mediaPlayer.stop();
+                }
+                if (position < (mTracks.size() - 1)) {
+                    position = position + 1;
+                    updateTrack(position);
+                    playSong(position, mTracks);
+                    btPlay.setVisibility(View.GONE);
+                    btPause.setVisibility(View.VISIBLE);
+                } else {
+                    position = 0;
+                    updateTrack(position);
+                    playSong(position, mTracks);
+                    btPlay.setVisibility(View.GONE);
+                    btPause.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
+        btBack.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View arg0) {
+                if (mediaPlayer != null) {
+                    played = false;
+                    mediaPlayer.stop();
+                }
+                if (position > 0) {
+                    position = position - 1;
+                    updateTrack(position);
+                    playSong(position, mTracks);
+                    btPlay.setVisibility(View.GONE);
+                    btPause.setVisibility(View.VISIBLE);
+                } else {
+                    position = mTracks.size() - 1;
+                    updateTrack(position);
+                    playSong(position, mTracks);
+                    btPlay.setVisibility(View.GONE);
+                    btPause.setVisibility(View.VISIBLE);
+                }
+            }
+
+        });
+
+
+        btPause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //   musicSrv.setSong(Integer.parseInt(view.getTag().toString()));
-                musicSrv.playSong(position);
+                if (mBound) {
+                    playPause();
+                    btPlay.setVisibility(View.VISIBLE);
+                    btPause.setVisibility(View.GONE);
+                }
 
             }
         });
-
-
-      //  showEditDialog2();
-
-//        getDialog().getWindow().setSoftInputMode(
-//                WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
         return view;
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        //menu item selected
-//        switch (item.getItemId()) {
-//            case R.id.action_shuffle:
-//                //shuffle
-//                break;
-//            case R.id.action_end:
-//                getActivity().stopService(playIntent);
-//                musicSrv=null;
-//                System.exit(0);
-//                break;
-//        }
-//        if(item.getItemId()){
-//            getActivity().stopService(playIntent);
-//            musicSrv=null;
-//            System.exit(0);
-//        }
-        return super.onOptionsItemSelected(item);
+    private void updateTrack(int position) {
+        String name = getArguments().getString("artistName");
+        mTracks = getArguments().getParcelableArrayList("tracksplayer");
+        TrackSpotify track = mTracks.get(position);
+        String url = track.getUrl();
+        String mAlbumName = track.getAlbumName();
+        String mtrackName = track.getName();
+        Picasso.with(getActivity().getApplicationContext()).load(url).into(trackImage);
+        album.setText(mAlbumName);
+        trackName.setText(mtrackName);
+        artistName.setText(name);
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            btPlay.setVisibility(View.GONE);
+            btPause.setVisibility(View.VISIBLE);
+        } else {
+            btPlay.setVisibility(View.GONE);
+            btPause.setVisibility(View.VISIBLE);
+        }
     }
-//    @Override
-//    public void onDestroy() {
-////        getActivity().stopService(playIntent);
-////        getActivity().unbindService(musicConnection);
-////        musicSrv=null;
-////        super.onDestroy();
-//    }
-    private ServiceConnection musicConnection = new ServiceConnection(){
 
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            MusicBinder binder = (MusicBinder)service;
-            //get service
-            musicSrv = binder.getService();
-            //pass list
-            musicSrv.setList(mTracks);
-            musicBound = true;
+    @Override
+    public void onStart() {
+        super.onStart();
+        Intent intent = new Intent(getActivity(), PlayerService.class);
+        getActivity().bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        mBound = true;
+    }
+
+    public void playSong(int pos, ArrayList<TrackSpotify> songs) {
+        TrackSpotify track = songs.get(pos);
+        String url = track.getPreviewUrl();
+        if (played == false) {
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            try {
+                mediaPlayer.setDataSource(url);
+                mediaPlayer.prepare();
+                played = true;
+            } catch (Exception e) {
+                Log.d("error", e.getMessage());
+            }
+
+            mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                public void onPrepared(MediaPlayer player) {
+                    player.start();
+
+                    updateSeekbar();
+
+                }
+            });
+
+
+            mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                @Override
+                public boolean onError(MediaPlayer mp, int what, int extra) {
+                    return false;
+                }
+            });
         }
 
-        @Override
-
-        public void onServiceDisconnected(ComponentName name) {
-            musicSrv=null;
-            musicBound = false;
-        }
-    };
-
-
-
-
-//
-//    private EditText mEditText;
-//    boolean mIsLargeLayout;
-//    Context mContext;
-//
-//
-//    public MediaPlayerFragment() {
-//      //  mContext=getActivity();
-//        // Required empty public constructor
-//    }
-////    public static MediaPlayerFragment newInstance() {
-////        MediaPlayerFragment f = new MediaPlayerFragment();
-////        return f;
-//    }
-    public void showEditDialog() {
-
-
-//
-//        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
-//        CustomDialogFragment newFragment = new CustomDialogFragment();
-//
-//        if (mIsLargeLayout) {
-//            // The device is using a large layout, so show the fragment as a dialog
-//            newFragment.show(fragmentManager, "dialog");
-//        } else {
-//            // The device is smaller, so show the fragment fullscreen
-//            FragmentTransaction transaction = fragmentManager.beginTransaction();
-//            // For a little polish, specify a transition animation
-//            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
-//            // To make it fullscreen, use the 'content' root view as the container
-//            // for the fragment, which is always the root view for the activity
-//            transaction.add(android.R.id.content, newFragment)
-//                    .addToBackStack(null).commit();
-//        }
-
-//        MediaPlayerFragment newFragment = new MediaPlayerFragment();
-//
-//        if (mIsLargeLayout) {
-//            // The device is using a large layout, so show the fragment as a dialog
-//           // newFragment.show(fragmentManager, "dialog");
-//        } else {
-//            // The device is smaller, so show the fragment fullscreen
-//            FragmentTransaction transaction = fragmentManager.beginTransaction();
-//            // For a little polish, specify a transition animation
-//            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
-//            // To make it fullscreen, use the 'content' root view as the container
-//            // for the fragment, which is always the root view for the activity
-//            transaction.add(android.R.id.content, newFragment)
-//                    .addToBackStack(null).commit();
-//        }
     }
-//
-//    /** The system calls this to get the DialogFragment's layout, regardless
-//     of whether it's being displayed as a dialog or an embedded fragment. */
-//    @Override
-//    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-//                             Bundle savedInstanceState) {
-//        mIsLargeLayout = getResources().getBoolean(R.bool.large_layout);
-//        showEditDialog();
-//        // Inflate the layout to use as dialog or embedded fragment
-//        return inflater.inflate(R.layout.fragment_media_player, container, false);
-//    }
-//
-//    /** The system calls this only when creating the layout in a dialog. */
-//    @Override
-//    public Dialog onCreateDialog(Bundle savedInstanceState) {
-//        // The only reason you might override this method when using onCreateView() is
-//        // to modify any dialog characteristics. For example, the dialog includes a
-//        // title by default, but your custom layout might not need it. So here you can
-//        // remove the dialog title, but you must call the superclass to get the Dialog.
-//        Dialog dialog = super.onCreateDialog(savedInstanceState);
-//        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-//        return dialog;
-//    }
-@Override
-public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-    inflater.inflate(R.menu.menu_media_player, menu);
-    super.onCreateOptionsMenu(menu, inflater);
 
-}
+    private void playPause() {
+        if (mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+
+        } else {
+            mediaPlayer.start();
+        }
+    }
+
+    private void updateSeekbar() {
+
+
+        getActivity().runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+                Utility timeMethods = new Utility();
+
+                if (mediaPlayer != null) {
+                    long totalDuration = mediaPlayer.getDuration();
+                    long currentDuration = mediaPlayer.getCurrentPosition();
+
+                    trackDuration.setText("" + timeMethods.milliSecondsToTimer(totalDuration));
+                    trackProgress.setText("" + timeMethods.milliSecondsToTimer(currentDuration));
+
+                    int progress = (int) (timeMethods.getProgressPercentage(currentDuration, totalDuration));
+                    trackbar.setProgress(progress);
+                    mHandler.postDelayed(this, 100);
+                }
+
+            }
+        });
+
+
+        trackbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (mediaPlayer != null && fromUser) {
+                    mediaPlayer.seekTo(progress * 300);
+                }
+            }
+        });
+
+    }
+
     @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        // The only reason you might override this method when using onCreateView() is
-        // to modify any dialog characteristics. For example, the dialog includes a
-        // title by default, but your custom layout might not need it. So here you can
-        // remove the dialog title, but you must call the superclass to get the Dialog.
-        Dialog dialog = super.onCreateDialog(savedInstanceState);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        return dialog;
+    public void onDestroy() {
+        if (mBound) {
+            getActivity().unbindService(mConnection);
+            mediaPlayer.release();
+            mBound = false;
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (mBound) {
+            getActivity().unbindService(mConnection);
+            mBound = false;
+        }
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (mediaPlayer != null) {
+            played = false;
+            mediaPlayer.stop();
+        }
+
+        setRetainInstance(true);
+
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (getDialog() != null && getRetainInstance()) {
+            getDialog().setDismissMessage(null);
+        }
+        super.onDestroyView();
     }
 
 

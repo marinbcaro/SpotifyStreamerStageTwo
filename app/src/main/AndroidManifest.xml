@@ -34,7 +34,6 @@
             android:label="@string/title_activity_media_player" >
         </activity>
 
-        <service android:name=".service.MediaPlayerService" />
         <service
             android:name=".service.TestService"
             android:enabled="true"

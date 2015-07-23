@@ -10,17 +10,10 @@ import android.view.MenuItem;
 public class TracksActivity extends ActionBarActivity {
 
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tracks);
-
-//        if (savedInstanceState == null) {
-//            getSupportFragmentManager().beginTransaction()
-//                    .add(R.id.containerTracks, new TracksFragment())
-//                    .commit();
-//        }
 
         if (savedInstanceState == null) {
             // Create the detail fragment and add it to the activity
@@ -39,15 +32,6 @@ public class TracksActivity extends ActionBarActivity {
     }
 
 
-
-//    public void showTest() {
-//        FragmentManager fragmentManager = getSupportFragmentManager();
-//        MyDialogFragment newFragment = MyDialogFragment.newInstance("test");
-//        FragmentTransaction transaction = fragmentManager.beginTransaction();
-//        transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
-//        transaction.add(android.R.id.content, newFragment)
-//                .addToBackStack(null).commit();
-//    }
     public void setActionBarTitle(String artistName) {
         ActionBar ab = getSupportActionBar();
         ab.setSubtitle(artistName);

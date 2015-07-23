@@ -75,8 +75,8 @@ public abstract class SpotifyObject implements Parcelable {
                             position = cont;
                         }
                     }
-                    if(type=="regular"){
-                        if (img.width == 300) {
+                    if(type=="original"){
+                        if (img.width == 640) {
                             position = cont;
                         }
                     }
