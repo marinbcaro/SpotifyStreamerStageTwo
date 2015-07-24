@@ -46,11 +46,13 @@ public class TracksFragment extends Fragment {
             obj = arguments.getParcelable(TracksFragment.DETAIL_URI);
         }
 
+
         Intent intent = getActivity().getIntent();
         View rootView = inflater.inflate(R.layout.fragment_tracks, container, false);
 
         if (obj != null) {
             final String artistName = obj.getName();
+            ((TracksActivity) getActivity()).setActionBarTitle(artistName);
             tracks = obj.getTopTracks();
             ArrayList<SpotifyObject> childArray = (ArrayList<SpotifyObject>) ((ArrayList<?>) tracks);
             adapter = new ResultsAdapter(getActivity(), R.layout.list_item_main, childArray);
@@ -73,6 +75,7 @@ public class TracksFragment extends Fragment {
             if (intent != null && intent.hasExtra(Intent.EXTRA_TEXT)) {
                 ArtistSpotify myParcelableObject = intent.getParcelableExtra(Intent.EXTRA_TEXT);
                 final String artistName = myParcelableObject.getName();
+                ((TracksActivity) getActivity()).setActionBarTitle(artistName);
                 tracks = myParcelableObject.getTopTracks();
 
                 ArrayList<SpotifyObject> childArray = (ArrayList<SpotifyObject>) ((ArrayList<?>) tracks);

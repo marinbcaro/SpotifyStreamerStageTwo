@@ -135,8 +135,10 @@ public class MainFragment extends Fragment {
         if( savedInstanceState != null ){
             mArtists = savedInstanceState.getParcelableArrayList("artists");
             adapter.clear();
+            if(mArtists!=null){
             adapter.addAll(mArtists);
             adapter.notifyDataSetChanged();
+            }
 
         }
         super.onViewStateRestored(savedInstanceState);
@@ -172,7 +174,7 @@ public class MainFragment extends Fragment {
 
             String artistName = params[0];
 
-            if (artistName != null && artistName.length() > 2) {
+            if (artistName != null && artistName.length() > 0) {
                 try {
                     SpotifyApi api = new SpotifyApi();
                     SpotifyService spotify = api.getService();
