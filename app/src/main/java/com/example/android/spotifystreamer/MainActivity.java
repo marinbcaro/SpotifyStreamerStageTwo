@@ -17,20 +17,9 @@ public class MainActivity extends ActionBarActivity implements MainFragment.Call
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        if (savedInstanceState == null) {
-//            getSupportFragmentManager().beginTransaction()
-//                    .add(R.id.container, new MainFragment())
-//                    .commit();
-//        }
 
         if (findViewById(R.id.containerTracks) != null) {
-            // The detail container view will be present only in the large-screen layouts
-            // (res/layout-sw600dp). If this view is present, then the activity should be
-            // in two-pane mode.
             mTwoPane = true;
-            // In two-pane mode, show the detail view in this activity by
-            // adding or replacing the detail fragment using a
-            // fragment transaction.
             if (savedInstanceState == null) {
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.containerTracks, new TracksFragment(), DETAILFRAGMENT_TAG)
@@ -46,9 +35,6 @@ public class MainActivity extends ActionBarActivity implements MainFragment.Call
     @Override
     public void onItemSelected(ArtistSpotify obj) {
         if (mTwoPane) {
-            // In two-pane mode, show the detail view in this activity by
-            // adding or replacing the detail fragment using a
-            // fragment transaction.
             Bundle args = new Bundle();
             args.putParcelable(TracksFragment.DETAIL_URI, obj);
 
@@ -60,11 +46,9 @@ public class MainActivity extends ActionBarActivity implements MainFragment.Call
                     .commit();
         } else {
             Intent intent = new Intent(this, TracksActivity.class);
-
             intent.putExtra(Intent.EXTRA_TEXT, obj);
             startActivity(intent);
         }
     }
-
 
 }

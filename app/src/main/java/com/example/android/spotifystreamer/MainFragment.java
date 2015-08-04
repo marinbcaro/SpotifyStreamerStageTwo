@@ -39,20 +39,21 @@ import retrofit.RetrofitError;
 public class MainFragment extends Fragment {
 
 
+    private static final String SELECTED_KEY = "selected_position";
     private String artistId;
     private String artistName;
     private ResultsAdapter adapter;
     private ListView listView;
-    private int mPosition=ListView.INVALID_POSITION;
-    private static final String SELECTED_KEY = "selected_position";
+    private int mPosition = ListView.INVALID_POSITION;
     private ArrayList<SpotifyObject> mArtists;
 
     @Override
-    public void onCreate(Bundle instanceState){
+    public void onCreate(Bundle instanceState) {
         super.onCreate(instanceState);
-       // Log.d(LOG_TAG, "In onCreate method.");
+        // Log.d(LOG_TAG, "In onCreate method.");
         this.setRetainInstance(true);
     }
+
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
 
@@ -69,9 +70,9 @@ public class MainFragment extends Fragment {
         listView = (ListView) rootView.findViewById(R.id.listview_main);
         listView.setAdapter(adapter);
 
-        ListView listViewTracks=(ListView) rootView.findViewById(R.id.listview_tracks);
-        if(listViewTracks!=null){
-            ResultsAdapter adap=(ResultsAdapter)listViewTracks.getAdapter();
+        ListView listViewTracks = (ListView) rootView.findViewById(R.id.listview_tracks);
+        if (listViewTracks != null) {
+            ResultsAdapter adap = (ResultsAdapter) listViewTracks.getAdapter();
             adap.clear();
             adap.notifyDataSetChanged();
         }
@@ -90,7 +91,7 @@ public class MainFragment extends Fragment {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
-                if(event.getAction() == MotionEvent.ACTION_UP){
+                if (event.getAction() == MotionEvent.ACTION_UP) {
                     ((EditText) v).setText("");
                 }
                 return false;
@@ -117,27 +118,26 @@ public class MainFragment extends Fragment {
                 paramsArray[0] = artistId;
                 paramsArray[1] = artistName;
                 searchTracks(paramsArray);
-                mPosition=position;
+                mPosition = position;
             }
         });
 
 
         if (savedInstanceState != null && savedInstanceState.containsKey(SELECTED_KEY)) {
-                       // The listview probably hasn't even been populated yet.  Actually perform the
-                               // swapout in onLoadFinished.
-                                        mPosition = savedInstanceState.getInt(SELECTED_KEY);
 
-                    }
+            mPosition = savedInstanceState.getInt(SELECTED_KEY);
+
+        }
         return rootView;
     }
 
     public void onViewStateRestored(Bundle savedInstanceState) {
-        if( savedInstanceState != null ){
+        if (savedInstanceState != null) {
             mArtists = savedInstanceState.getParcelableArrayList("artists");
             adapter.clear();
-            if(mArtists!=null){
-            adapter.addAll(mArtists);
-            adapter.notifyDataSetChanged();
+            if (mArtists != null) {
+                adapter.addAll(mArtists);
+                adapter.notifyDataSetChanged();
             }
 
         }
@@ -145,20 +145,30 @@ public class MainFragment extends Fragment {
     }
 
     @Override
-       public void onSaveInstanceState(Bundle outState) {
-               // When tablets rotate, the currently selected list item needs to be saved.
+    public void onSaveInstanceState(Bundle outState) {
+        // When tablets rotate, the currently selected list item needs to be saved.
         // When no item is selected, mPosition will be set to Listview.INVALID_POSITION,
-                                // so check for that before storing.
-        if( mArtists != null ){
+        // so check for that before storing.
+        if (mArtists != null) {
             outState.putParcelableArrayList("artists", mArtists);
         }
-                                       if (mPosition != ListView.INVALID_POSITION) {
-                       outState.putInt(SELECTED_KEY, mPosition);
-                   }
-               super.onSaveInstanceState(outState);
-           }
+        if (mPosition != ListView.INVALID_POSITION) {
+            outState.putInt(SELECTED_KEY, mPosition);
+        }
+        super.onSaveInstanceState(outState);
+    }
 
+    //Execute Async Task
+    private void searchArtist(String term) {
+        SpotifyTask artistTask = new SpotifyTask();
+        artistTask.execute(term);
+    }
 
+    //Execute Sync Task
+    private void searchTracks(String[] params) {
+        TracksTask topTracksTacks = new TracksTask();
+        topTracksTacks.execute(params);
+    }
 
     public interface Callback {
         /**
@@ -166,6 +176,7 @@ public class MainFragment extends Fragment {
          */
         public void onItemSelected(ArtistSpotify obj);
     }
+
     //Async Task for Search an artist
     public class SpotifyTask extends AsyncTask<String, Void, ArrayList<SpotifyObject>> {
 
@@ -187,15 +198,15 @@ public class MainFragment extends Fragment {
                         String name = element.name;
                         String id = element.id;
                         String url = "";
-                        String urlThumb="";
+                        String urlThumb = "";
                         List<Image> images = element.images;
-                        SpotifyObject obj = new ArtistSpotify(id, name, url, "",urlThumb, new ArrayList<TrackSpotify>());
-                        url = obj.getImage(images,"original");
-                        urlThumb=obj.getImage(images,"thumbnail");
+                        SpotifyObject obj = new ArtistSpotify(id, name, url, "", urlThumb, new ArrayList<TrackSpotify>());
+                        url = obj.getImage(images, "original");
+                        urlThumb = obj.getImage(images, "thumbnail");
                         obj.setUrl(url);
                         obj.setUrlThumb(urlThumb);
                         listSpotifyObjects.add(obj);
-                        mArtists=listSpotifyObjects;
+                        mArtists = listSpotifyObjects;
                     }
                     return listSpotifyObjects;
                 } catch (RetrofitError error) {
@@ -246,17 +257,17 @@ public class MainFragment extends Fragment {
                     String id = element.id;
                     String albumName = element.album.name;
                     String url = "";
-                    String urlThumb="";
+                    String urlThumb = "";
                     List<Image> images = element.album.images;
-                    String preview=element.preview_url;
-                    TrackSpotify obj = new TrackSpotify(id, name, url, albumName,urlThumb,preview);
-                    url = obj.getImage(images,"original");
-                    urlThumb=obj.getImage(images,"thumbnail");
+                    String preview = element.preview_url;
+                    TrackSpotify obj = new TrackSpotify(id, name, url, albumName, urlThumb, preview);
+                    url = obj.getImage(images, "original");
+                    urlThumb = obj.getImage(images, "thumbnail");
                     obj.setUrl(url);
                     obj.setUrlThumb(urlThumb);
                     listSpotifyObjects.add(obj);
                 }
-                ArtistSpotify artistObj = new ArtistSpotify(idArtist, nameArtist, "", "", "",listSpotifyObjects);
+                ArtistSpotify artistObj = new ArtistSpotify(idArtist, nameArtist, "", "", "", listSpotifyObjects);
 
                 return artistObj;
             } catch (RetrofitError error) {
@@ -269,11 +280,6 @@ public class MainFragment extends Fragment {
         @Override
         protected void onPostExecute(ArtistSpotify result) {
             if (result != null && result.getTopTracks().size() > 0) {
-//                Intent intent = new Intent(getActivity(), TracksActivity.class);
-//                intent.putExtra(Intent.EXTRA_TEXT, result);
-//                startActivity(intent);
-
-
                 ((Callback) getActivity()).onItemSelected(result);
             } else {
                 Toast.makeText(getActivity().getApplicationContext(), "No tracks available for this artist",
@@ -282,18 +288,6 @@ public class MainFragment extends Fragment {
         }
 
     }
-    //Execute Async Task
-    private void searchArtist(String term) {
-        SpotifyTask artistTask = new SpotifyTask();
-        artistTask.execute(term);
-    }
-    //Execute Sync Task
-    private void searchTracks(String[] params) {
-        TracksTask topTracksTacks = new TracksTask();
-        topTracksTacks.execute(params);
-    }
-
-
 
 
 }

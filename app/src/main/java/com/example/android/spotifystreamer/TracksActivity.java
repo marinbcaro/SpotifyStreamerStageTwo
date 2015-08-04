@@ -7,7 +7,6 @@ import android.support.v7.app.ActionBarActivity;
 
 public class TracksActivity extends ActionBarActivity {
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,6 +32,7 @@ public class TracksActivity extends ActionBarActivity {
     public void setActionBarTitle(String artistName) {
         ActionBar ab = getSupportActionBar();
         ab.setSubtitle(artistName);
+
     }
 
 }

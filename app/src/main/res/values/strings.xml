@@ -5,4 +5,7 @@
     <string name="title_activity_detail">DetailActivity</string>
     <string name="title_activity_tracks">Top 10 Tracks</string>
     <string name="title_activity_media_player">MediaPlayerActivity</string>
+    <string name="title_activity_main_activity2">MainActivity2Activity</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
 </resources>

@@ -1,5 +1,8 @@
 package com.example.android.spotifystreamer;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -22,8 +25,8 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.example.android.spotifystreamer.data.TrackSpotify;
-import com.example.android.spotifystreamer.service.PlayerService;
 import com.example.android.spotifystreamer.data.Utility;
+import com.example.android.spotifystreamer.service.PlayerService;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -35,9 +38,9 @@ import butterknife.ButterKnife;
 public class MediaPlayerFragment extends DialogFragment {
 
     private static MediaPlayer mediaPlayer;
-    PlayerService mService;
+    private static boolean played = false;
     boolean mBound = false;
-    boolean played = false;
+    // boolean played = false;
     boolean mIsLargeLayout;
     @Bind(R.id.artistName)
     TextView artistName;
@@ -63,10 +66,12 @@ public class MediaPlayerFragment extends DialogFragment {
     ImageButton btBack;
     @Bind(R.id.pause)
     ImageButton btPause;
+    private PlayerService mService = new PlayerService();
     private ArrayList<TrackSpotify> mTracks = new ArrayList<>();
     private int position = -1;
     private int positionArg;
     private Handler mHandler = new Handler();
+    private String mArtist;
     private ServiceConnection mConnection = new ServiceConnection() {
 
         @Override
@@ -113,11 +118,13 @@ public class MediaPlayerFragment extends DialogFragment {
 
         mTracks = getArguments().getParcelableArrayList("tracksplayer");
         positionArg = getArguments().getInt("position");
+        mArtist = getArguments().getString("artistName");
         if (position == -1) {
             position = positionArg;
         }
 
         playSong(position, mTracks);
+        showNotification();
         updateTrack(position);
 
 
@@ -125,7 +132,7 @@ public class MediaPlayerFragment extends DialogFragment {
             @Override
             public void onClick(View view) {
                 if (mBound) {
-                    playPause();
+                    mService.playPause(mediaPlayer);
                     btPlay.setVisibility(View.GONE);
                     btPause.setVisibility(View.VISIBLE);
                 }
@@ -133,26 +140,10 @@ public class MediaPlayerFragment extends DialogFragment {
         });
 
         btNext.setOnClickListener(new View.OnClickListener() {
-
             @Override
             public void onClick(View arg0) {
-                if (mediaPlayer != null) {
-                    played = false;
-                    mediaPlayer.stop();
-                }
-                if (position < (mTracks.size() - 1)) {
-                    position = position + 1;
-                    updateTrack(position);
-                    playSong(position, mTracks);
-                    btPlay.setVisibility(View.GONE);
-                    btPause.setVisibility(View.VISIBLE);
-                } else {
-                    position = 0;
-                    updateTrack(position);
-                    playSong(position, mTracks);
-                    btPlay.setVisibility(View.GONE);
-                    btPause.setVisibility(View.VISIBLE);
-                }
+                forwardNext("next");
+
             }
         });
 
@@ -160,23 +151,8 @@ public class MediaPlayerFragment extends DialogFragment {
 
             @Override
             public void onClick(View arg0) {
-                if (mediaPlayer != null) {
-                    played = false;
-                    mediaPlayer.stop();
-                }
-                if (position > 0) {
-                    position = position - 1;
-                    updateTrack(position);
-                    playSong(position, mTracks);
-                    btPlay.setVisibility(View.GONE);
-                    btPause.setVisibility(View.VISIBLE);
-                } else {
-                    position = mTracks.size() - 1;
-                    updateTrack(position);
-                    playSong(position, mTracks);
-                    btPlay.setVisibility(View.GONE);
-                    btPause.setVisibility(View.VISIBLE);
-                }
+
+                forwardNext("back");
             }
 
         });
@@ -186,7 +162,7 @@ public class MediaPlayerFragment extends DialogFragment {
             @Override
             public void onClick(View view) {
                 if (mBound) {
-                    playPause();
+                    mService.playPause(mediaPlayer);
                     btPlay.setVisibility(View.VISIBLE);
                     btPause.setVisibility(View.GONE);
                 }
@@ -196,9 +172,31 @@ public class MediaPlayerFragment extends DialogFragment {
         return view;
     }
 
+
+    private void forwardNext(String type) {
+        if (mediaPlayer != null) {
+            played = false;
+            mService.stop(mediaPlayer);
+        }
+
+        if (type == "next") {
+            position = ++position % mTracks.size();
+
+        } else {
+            position = (--position + mTracks.size()) % mTracks.size();
+        }
+
+        updateTrack(position);
+        playSong(position, mTracks);
+        btPlay.setVisibility(View.GONE);
+        btPause.setVisibility(View.VISIBLE);
+
+    }
+
     private void updateTrack(int position) {
         String name = getArguments().getString("artistName");
         mTracks = getArguments().getParcelableArrayList("tracksplayer");
+
         TrackSpotify track = mTracks.get(position);
         String url = track.getUrl();
         String mAlbumName = track.getAlbumName();
@@ -210,10 +208,12 @@ public class MediaPlayerFragment extends DialogFragment {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             btPlay.setVisibility(View.GONE);
             btPause.setVisibility(View.VISIBLE);
+
         } else {
             btPlay.setVisibility(View.GONE);
             btPause.setVisibility(View.VISIBLE);
         }
+
     }
 
     @Override
@@ -241,7 +241,6 @@ public class MediaPlayerFragment extends DialogFragment {
             mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 public void onPrepared(MediaPlayer player) {
                     player.start();
-
                     updateSeekbar();
 
                 }
@@ -268,8 +267,6 @@ public class MediaPlayerFragment extends DialogFragment {
     }
 
     private void updateSeekbar() {
-
-
         getActivity().runOnUiThread(new Runnable() {
 
             @Override
@@ -289,6 +286,7 @@ public class MediaPlayerFragment extends DialogFragment {
                 }
 
             }
+
         });
 
 
@@ -338,11 +336,9 @@ public class MediaPlayerFragment extends DialogFragment {
         super.onCreate(savedInstanceState);
         if (mediaPlayer != null) {
             played = false;
-            mediaPlayer.stop();
+            mService.stop(mediaPlayer);
         }
-
         setRetainInstance(true);
-
     }
 
     @Override
@@ -353,5 +349,31 @@ public class MediaPlayerFragment extends DialogFragment {
         super.onDestroyView();
     }
 
+    public void showNotification() {
+        Intent newintent = new Intent(getActivity(), MediaPlayerActivity.class);
+
+        NotificationManager mNotificationManager;
+
+        newintent.putParcelableArrayListExtra("tracksplayer", mTracks);
+        newintent.putExtra("position", positionArg);
+        newintent.putExtra("artistName", mArtist);
+
+        int uniqueInt = (int) (System.currentTimeMillis() & 0xfffffff);
+        PendingIntent contentIntent = PendingIntent.getActivity(getActivity(), uniqueInt, newintent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Notification notification = new Notification.Builder(getActivity())
+                .setContentTitle("Spotify Streamer")
+                .setContentText(mTracks.get(positionArg).getName())
+                .setSmallIcon(R.drawable.placeholder)
+                .setContentIntent(contentIntent).build();
+        mNotificationManager = (NotificationManager) getActivity().getSystemService(Context
+                .NOTIFICATION_SERVICE);
+        notification.flags = notification.flags
+                | Notification.FLAG_ONGOING_EVENT;
+        notification.flags |= Notification.FLAG_AUTO_CANCEL;
+
+        mNotificationManager.notify(0, notification);
+
+    }
 
 }
